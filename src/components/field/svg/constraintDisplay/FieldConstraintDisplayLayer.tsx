@@ -45,6 +45,7 @@ const overlays = {
       lineColor={props.lineColor}
     ></KeepInRectangleOverlay>
   ),
+  KeepInBounds: () => <></>,
   KeepInLane: (props: OverlayProps<"KeepInLane">) => (
     <KeepInLaneOverlay
       data={props.data.data}
@@ -63,7 +64,11 @@ const overlays = {
   StopPoint: () => <></>,
   MaxAcceleration: () => <></>,
   MaxVelocity: () => <></>,
-  MaxAngularVelocity: () => <></>
+  MaxAngularVelocity: () => <></>,
+  MaxAngularAcceleration: () => <></>,
+  Strafe: () => <></>,
+  StrafeDiff: () => <></>,
+  FrontPivot: () => <></>
 } satisfies {
   [K in ConstraintKey]: (props: OverlayProps<K>) => React.JSX.Element;
 };

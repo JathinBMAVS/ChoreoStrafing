@@ -159,6 +159,12 @@ mod ffi {
             magnitude: f64,
         );
 
+        fn wpt_angular_acceleration_max_magnitude(
+            self: Pin<&mut SwerveTrajectoryGenerator>,
+            index: usize,
+            magnitude: f64,
+        );
+
         fn wpt_point_at(
             self: Pin<&mut SwerveTrajectoryGenerator>,
             index: usize,
@@ -201,6 +207,30 @@ mod ffi {
             keep_in_radius: f64,
         );
 
+        fn wpt_linear_velocity_heading(
+            self: Pin<&mut SwerveTrajectoryGenerator>,
+            index: usize,
+            tolerance: f64,
+        );
+
+        fn wpt_linear_velocity_diff(
+            self: Pin<&mut SwerveTrajectoryGenerator>,
+            index: usize,
+        );
+
+        fn wpt_front_pivot(
+            self: Pin<&mut SwerveTrajectoryGenerator>,
+            index: usize,
+            pivot_distance: f64,
+        );
+
+        fn sgmt_front_pivot(
+            self: Pin<&mut SwerveTrajectoryGenerator>,
+            from_index: usize,
+            to_index: usize,
+            pivot_distance: f64,
+        );
+
         // Constraints with segment scope
 
         fn sgmt_linear_velocity_direction(
@@ -208,6 +238,19 @@ mod ffi {
             from_index: usize,
             to_index: usize,
             angle: f64,
+        );
+
+        fn sgmt_linear_velocity_heading(
+            self: Pin<&mut SwerveTrajectoryGenerator>,
+            from_index: usize,
+            to_index: usize,
+            tolerance: f64,
+        );
+
+        fn sgmt_linear_velocity_diff(
+            self: Pin<&mut SwerveTrajectoryGenerator>,
+            from_index: usize,
+            to_index: usize,
         );
 
         fn sgmt_linear_velocity_max_magnitude(
@@ -225,6 +268,13 @@ mod ffi {
         );
 
         fn sgmt_linear_acceleration_max_magnitude(
+            self: Pin<&mut SwerveTrajectoryGenerator>,
+            from_index: usize,
+            to_index: usize,
+            magnitude: f64,
+        );
+
+        fn sgmt_angular_acceleration_max_magnitude(
             self: Pin<&mut SwerveTrajectoryGenerator>,
             from_index: usize,
             to_index: usize,
@@ -374,6 +424,12 @@ mod ffi {
             magnitude: f64,
         );
 
+        fn wpt_angular_acceleration_max_magnitude(
+            self: Pin<&mut DifferentialTrajectoryGenerator>,
+            index: usize,
+            magnitude: f64,
+        );
+
         fn wpt_point_at(
             self: Pin<&mut DifferentialTrajectoryGenerator>,
             index: usize,
@@ -440,6 +496,13 @@ mod ffi {
         );
 
         fn sgmt_linear_acceleration_max_magnitude(
+            self: Pin<&mut DifferentialTrajectoryGenerator>,
+            from_index: usize,
+            to_index: usize,
+            magnitude: f64,
+        );
+
+        fn sgmt_angular_acceleration_max_magnitude(
             self: Pin<&mut DifferentialTrajectoryGenerator>,
             from_index: usize,
             to_index: usize,
@@ -621,6 +684,14 @@ impl SwerveTrajectoryGenerator {
         );
     }
 
+    pub fn wpt_angular_acceleration_max_magnitude(&mut self, index: usize, magnitude: f64) {
+        crate::ffi::SwerveTrajectoryGenerator::wpt_angular_acceleration_max_magnitude(
+            self.generator.pin_mut(),
+            index,
+            magnitude,
+        );
+    }
+
     pub fn wpt_point_at(
         &mut self,
         index: usize,
@@ -705,6 +776,43 @@ impl SwerveTrajectoryGenerator {
         )
     }
 
+    pub fn wpt_linear_velocity_heading(&mut self, index: usize, tolerance: f64) {
+        crate::ffi::SwerveTrajectoryGenerator::wpt_linear_velocity_heading(
+            self.generator.pin_mut(),
+            index,
+            tolerance,
+        );
+    }
+
+    pub fn wpt_linear_velocity_diff(&mut self, index: usize) {
+        crate::ffi::SwerveTrajectoryGenerator::wpt_linear_velocity_diff(
+            self.generator.pin_mut(),
+            index,
+        );
+    }
+
+    pub fn wpt_front_pivot(&mut self, index: usize, pivot_distance: f64) {
+        crate::ffi::SwerveTrajectoryGenerator::wpt_front_pivot(
+            self.generator.pin_mut(),
+            index,
+            pivot_distance,
+        );
+    }
+
+    pub fn sgmt_front_pivot(
+        &mut self,
+        from_index: usize,
+        to_index: usize,
+        pivot_distance: f64,
+    ) {
+        crate::ffi::SwerveTrajectoryGenerator::sgmt_front_pivot(
+            self.generator.pin_mut(),
+            from_index,
+            to_index,
+            pivot_distance,
+        );
+    }
+
     // Constraints with segment scope
 
     pub fn sgmt_linear_velocity_direction(
@@ -718,6 +826,32 @@ impl SwerveTrajectoryGenerator {
             from_index,
             to_index,
             angle,
+        );
+    }
+
+    pub fn sgmt_linear_velocity_heading(
+        &mut self,
+        from_index: usize,
+        to_index: usize,
+        tolerance: f64,
+    ) {
+        crate::ffi::SwerveTrajectoryGenerator::sgmt_linear_velocity_heading(
+            self.generator.pin_mut(),
+            from_index,
+            to_index,
+            tolerance,
+        );
+    }
+
+    pub fn sgmt_linear_velocity_diff(
+        &mut self,
+        from_index: usize,
+        to_index: usize,
+    ) {
+        crate::ffi::SwerveTrajectoryGenerator::sgmt_linear_velocity_diff(
+            self.generator.pin_mut(),
+            from_index,
+            to_index,
         );
     }
 
@@ -756,6 +890,20 @@ impl SwerveTrajectoryGenerator {
         magnitude: f64,
     ) {
         crate::ffi::SwerveTrajectoryGenerator::sgmt_linear_acceleration_max_magnitude(
+            self.generator.pin_mut(),
+            from_index,
+            to_index,
+            magnitude,
+        );
+    }
+
+    pub fn sgmt_angular_acceleration_max_magnitude(
+        &mut self,
+        from_index: usize,
+        to_index: usize,
+        magnitude: f64,
+    ) {
+        crate::ffi::SwerveTrajectoryGenerator::sgmt_angular_acceleration_max_magnitude(
             self.generator.pin_mut(),
             from_index,
             to_index,
@@ -1020,6 +1168,14 @@ impl DifferentialTrajectoryGenerator {
         );
     }
 
+    pub fn wpt_angular_acceleration_max_magnitude(&mut self, index: usize, magnitude: f64) {
+        crate::ffi::DifferentialTrajectoryGenerator::wpt_angular_acceleration_max_magnitude(
+            self.generator.pin_mut(),
+            index,
+            magnitude,
+        );
+    }
+
     pub fn wpt_point_at(
         &mut self,
         index: usize,
@@ -1155,6 +1311,20 @@ impl DifferentialTrajectoryGenerator {
         magnitude: f64,
     ) {
         crate::ffi::DifferentialTrajectoryGenerator::sgmt_linear_acceleration_max_magnitude(
+            self.generator.pin_mut(),
+            from_index,
+            to_index,
+            magnitude,
+        );
+    }
+
+    pub fn sgmt_angular_acceleration_max_magnitude(
+        &mut self,
+        from_index: usize,
+        to_index: usize,
+        magnitude: f64,
+    ) {
+        crate::ffi::DifferentialTrajectoryGenerator::sgmt_angular_acceleration_max_magnitude(
             self.generator.pin_mut(),
             from_index,
             to_index,

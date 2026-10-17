@@ -13,7 +13,7 @@
       "minimumSystemVersion": "14.5",
       "signingIdentity": "-"
     },
-    "shortDescription": "Choreo",
+    "shortDescription": "Choreo Strafe",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -23,9 +23,9 @@
     ],
     "externalBin": ["../target/choreo-cli"]
   },
-  "productName": "Choreo",
+  "productName": "Choreo Strafe",
   "version": "2026.0.3",
-  "identifier": "org.sleipnirgroup",
+  "identifier": "org.sleipnirgroup.choreostrafe",
   "plugins": {},
   "app": {
     "withGlobalTauri": false,
@@ -33,7 +33,7 @@
       {
         "fullscreen": false,
         "resizable": true,
-        "title": "Choreo v2026.0.3",
+        "title": "Choreo Strafe v2026.0.3",
         "width": 1200,
         "height": 800
       }

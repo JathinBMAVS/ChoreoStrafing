@@ -8,11 +8,15 @@
 #include <sleipnir/autodiff/variable.hpp>
 #include <sleipnir/optimization/problem.hpp>
 
+#include "trajopt/constraint/angular_acceleration_max_magnitude_constraint.hpp"
 #include "trajopt/constraint/angular_velocity_max_magnitude_constraint.hpp"
+#include "trajopt/constraint/front_pivot_constraint.hpp"
 #include "trajopt/constraint/lane_constraint.hpp"
 #include "trajopt/constraint/line_point_constraint.hpp"
 #include "trajopt/constraint/linear_acceleration_max_magnitude_constraint.hpp"
+#include "trajopt/constraint/linear_velocity_diff_constraint.hpp"
 #include "trajopt/constraint/linear_velocity_direction_constraint.hpp"
+#include "trajopt/constraint/linear_velocity_heading_constraint.hpp"
 #include "trajopt/constraint/linear_velocity_max_magnitude_constraint.hpp"
 #include "trajopt/constraint/point_at_constraint.hpp"
 #include "trajopt/constraint/point_line_constraint.hpp"
@@ -43,11 +47,15 @@ concept ConstraintLike =
 /// List of constraint types (must satisfy ConstraintLike concept).
 using Constraint = std::variant<
     // clang-format off
+    AngularAccelerationMaxMagnitudeConstraint,
     AngularVelocityMaxMagnitudeConstraint,
+    FrontPivotConstraint,
     LaneConstraint,
     LinePointConstraint,
     LinearAccelerationMaxMagnitudeConstraint,
+    LinearVelocityDiffConstraint,
     LinearVelocityDirectionConstraint,
+    LinearVelocityHeadingConstraint,
     LinearVelocityMaxMagnitudeConstraint,
     PointAtConstraint,
     PointLineConstraint,

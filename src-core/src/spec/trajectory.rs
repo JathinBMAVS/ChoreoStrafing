@@ -7,6 +7,7 @@ use super::{Expr, SnapshottableType, upgraders::upgrade_traj_file};
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
+//SURE
 /// A waypoint parameter.
 pub struct Waypoint<T: SnapshottableType> {
     /// The x coordinate of the waypoint (blue origin).
@@ -126,6 +127,11 @@ pub enum ConstraintData<T: SnapshottableType> {
         /// The maximum angular velocity.
         max: T,
     },
+    /// A constraint on the maximum angular acceleration.
+    MaxAngularAcceleration {
+        /// The maximum angular acceleration.
+        max: T,
+    },
     /// A constraint on the robot's orientation.
     PointAt {
         /// The x coordinate of the point to face (blue origin).
@@ -151,8 +157,32 @@ pub enum ConstraintData<T: SnapshottableType> {
     KeepInRectangle { x: T, y: T, w: T, h: T },
     /// A constraint to contain the bumpers within two line
     KeepInLane { tolerance: T },
+    /// A constraint that applies an individual keep-in-lane between each consecutive waypoint pair in the range.
+    KeepInBounds { tolerance: T },
     /// A constraint to contain the bumpers outside a circlular region of the field
     KeepOutCircle { x: T, y: T, r: T },
+    /// A constraint to prevent strafing by limiting the angle between heading and velocity direction (swerve only)
+    Strafe {
+        /// Maximum allowed angle between the robot's heading and its velocity direction.
+        ///
+        /// Units: radians
+        tolerance: T,
+        /// Maximum angular velocity, prevents the robot from twirling to satisfy the heading constraint.
+        ///
+        /// Units: rad/s
+        #[serde(rename = "maxAngVel")]
+        max_ang_vel: T,
+    },
+    /// A constraint that enforces differential-drive kinematics: zero lateral velocity (swerve only)
+    StrafeDiff {},
+    /// A constraint that places the instantaneous center of rotation at a fixed distance in front
+    /// of the robot center, so the front stays stationary while the back swings around (swerve only).
+    FrontPivot {
+        /// Distance from the robot center to the pivot point along the heading direction.
+        ///
+        /// Units: meters
+        d: T,
+    },
 }
 
 impl<T: SnapshottableType> ConstraintData<T> {
@@ -161,6 +191,10 @@ impl<T: SnapshottableType> ConstraintData<T> {
         match self {
             ConstraintData::StopPoint {} => ConstraintScope::Waypoint,
             ConstraintData::KeepInLane { tolerance: _ } => ConstraintScope::Segment,
+            ConstraintData::KeepInBounds { tolerance: _ } => ConstraintScope::Segment,
+            ConstraintData::Strafe { .. } => ConstraintScope::Both,
+            ConstraintData::StrafeDiff {} => ConstraintScope::Both,
+            ConstraintData::FrontPivot { .. } => ConstraintScope::Both,
             _ => ConstraintScope::Both,
         }
     }
@@ -174,6 +208,11 @@ impl<T: SnapshottableType> ConstraintData<T> {
             ConstraintData::MaxAngularVelocity { max } => ConstraintData::MaxAngularVelocity {
                 max: max.snapshot(),
             },
+            ConstraintData::MaxAngularAcceleration { max } => {
+                ConstraintData::MaxAngularAcceleration {
+                    max: max.snapshot(),
+                }
+            }
             ConstraintData::PointAt {
                 x,
                 y,
@@ -203,11 +242,23 @@ impl<T: SnapshottableType> ConstraintData<T> {
             ConstraintData::KeepInLane { tolerance } => ConstraintData::KeepInLane {
                 tolerance: tolerance.snapshot(),
             },
+            ConstraintData::KeepInBounds { tolerance } => ConstraintData::KeepInBounds {
+                tolerance: tolerance.snapshot(),
+            },
             ConstraintData::KeepOutCircle { x, y, r } => ConstraintData::KeepOutCircle {
                 x: x.snapshot(),
                 y: y.snapshot(),
                 r: r.snapshot(),
             },
+            ConstraintData::Strafe {
+                tolerance,
+                max_ang_vel,
+            } => ConstraintData::Strafe {
+                tolerance: tolerance.snapshot(),
+                max_ang_vel: max_ang_vel.snapshot(),
+            },
+            ConstraintData::StrafeDiff {} => ConstraintData::StrafeDiff {},
+            ConstraintData::FrontPivot { d } => ConstraintData::FrontPivot { d: d.snapshot() },
         }
     }
 }
@@ -459,6 +510,51 @@ pub struct TrajectoryFile {
     pub events: Vec<EventMarker>,
 }
 
+/// Patch old trajectory files that have a `Strafe` constraint without `maxAngVel`.
+/// Injects a default value of π rad/s so the file deserializes correctly.
+fn patch_strafe_max_ang_vel(val: &mut serde_json::Value) {
+    // params.constraints — T = Expr, so maxAngVel must be {"exp": "...", "val": ...}
+    patch_strafe_constraints_in(
+        val.get_mut("params")
+            .and_then(|p| p.get_mut("constraints"))
+            .and_then(|c| c.as_array_mut()),
+        serde_json::json!({ "exp": "3.14 rad/s", "val": std::f64::consts::PI }),
+    );
+    // snapshot.constraints — T = f64, so maxAngVel is a bare number
+    patch_strafe_constraints_in(
+        val.get_mut("snapshot")
+            .and_then(|s| s.get_mut("constraints"))
+            .and_then(|c| c.as_array_mut()),
+        serde_json::json!(std::f64::consts::PI),
+    );
+}
+
+fn patch_strafe_constraints_in(
+    constraints: Option<&mut Vec<serde_json::Value>>,
+    default_max_ang_vel: serde_json::Value,
+) {
+    let Some(constraints) = constraints else {
+        return;
+    };
+    for constraint in constraints {
+        let is_strafe = constraint
+            .get("data")
+            .and_then(|d| d.get("type"))
+            .and_then(|t| t.as_str())
+            == Some("Strafe");
+        if is_strafe {
+            if let Some(props) = constraint
+                .get_mut("data")
+                .and_then(|d| d.get_mut("props"))
+            {
+                if props.get("maxAngVel").is_none() {
+                    props["maxAngVel"] = default_max_ang_vel.clone();
+                }
+            }
+        }
+    }
+}
+
 impl TrajectoryFile {
     /// The file extension to use when writing this file to disk.
     pub const EXTENSION: &'static str = "traj";
@@ -468,7 +564,8 @@ impl TrajectoryFile {
     /// # Errors
     /// - [`crate::ChoreoError::Json`] if the json string is invalid.
     pub fn from_content(content: &str) -> crate::ChoreoResult<TrajectoryFile> {
-        let val = upgrade_traj_file(serde_json::from_str(content)?)?;
+        let mut val = upgrade_traj_file(serde_json::from_str(content)?)?;
+        patch_strafe_max_ang_vel(&mut val);
         serde_json::from_value(val).map_err(Into::into)
     }
 

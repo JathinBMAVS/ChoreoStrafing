@@ -53,6 +53,7 @@ class SwerveTrajectoryGenerator {
   void wpt_angular_velocity_max_magnitude(size_t index,
                                           double angular_velocity);
   void wpt_linear_acceleration_max_magnitude(size_t index, double magnitude);
+  void wpt_angular_acceleration_max_magnitude(size_t index, double magnitude);
   void wpt_point_at(size_t index, double field_point_x, double field_point_y,
                     double heading_tolerance, bool flip);
   void wpt_keep_in_circle(size_t index, double field_point_x,
@@ -65,8 +66,17 @@ class SwerveTrajectoryGenerator {
   void wpt_keep_out_circle(size_t index, double field_point_x,
                            double field_point_y, double keep_in_radius);
 
+  void wpt_linear_velocity_heading(size_t index, double tolerance);
+  void wpt_linear_velocity_diff(size_t index);
+  void wpt_front_pivot(size_t index, double pivot_distance);
+  void sgmt_front_pivot(size_t from_index, size_t to_index,
+                        double pivot_distance);
+
   void sgmt_linear_velocity_direction(size_t from_index, size_t to_index,
                                       double angle);
+  void sgmt_linear_velocity_heading(size_t from_index, size_t to_index,
+                                    double tolerance);
+  void sgmt_linear_velocity_diff(size_t from_index, size_t to_index);
   void sgmt_linear_velocity_max_magnitude(size_t from_index, size_t to_index,
                                           double magnitude);
   void sgmt_angular_velocity_max_magnitude(size_t from_index, size_t to_index,
@@ -74,6 +84,9 @@ class SwerveTrajectoryGenerator {
   void sgmt_linear_acceleration_max_magnitude(size_t from_index,
                                               size_t to_index,
                                               double magnitude);
+  void sgmt_angular_acceleration_max_magnitude(size_t from_index,
+                                               size_t to_index,
+                                               double magnitude);
   void sgmt_point_at(size_t from_index, size_t to_index, double field_point_x,
                      double field_point_y, double heading_tolerance, bool flip);
   void sgmt_keep_in_circle(size_t from_index, size_t to_index,
@@ -128,6 +141,7 @@ class DifferentialTrajectoryGenerator {
   void wpt_angular_velocity_max_magnitude(size_t index,
                                           double angular_velocity);
   void wpt_linear_acceleration_max_magnitude(size_t index, double magnitude);
+  void wpt_angular_acceleration_max_magnitude(size_t index, double magnitude);
   void wpt_point_at(size_t index, double field_point_x, double field_point_y,
                     double heading_tolerance, bool flip);
   void wpt_keep_in_circle(size_t index, double field_point_x,
@@ -150,6 +164,9 @@ class DifferentialTrajectoryGenerator {
   void sgmt_linear_acceleration_max_magnitude(size_t from_index,
                                               size_t to_index,
                                               double magnitude);
+  void sgmt_angular_acceleration_max_magnitude(size_t from_index,
+                                               size_t to_index,
+                                               double magnitude);
   void sgmt_keep_in_circle(size_t from_index, size_t to_index,
                            double field_point_x, double field_point_y,
                            double keep_in_radius);

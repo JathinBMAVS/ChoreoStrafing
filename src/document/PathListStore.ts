@@ -213,6 +213,81 @@ export const PathListStore = types
           const copyOfOldPath = { ...oldPath.serialize, name: path!.name };
           path!.deserialize(copyOfOldPath);
         }
+      },
+      mirrorPath(uuid: string) {
+        if (!self.pathUUIDs.includes(uuid)) {
+          return;
+        }
+        const oldPath = self.paths.get(uuid);
+        if (oldPath === undefined) {
+          return;
+        }
+        const newuuid = self.addPath(oldPath.name + "_Mirror", false);
+        const path = self.paths.get(newuuid);
+        const serialized = oldPath.serialize;
+
+        const flipY = (val: number) => FieldDimensions.FIELD_WIDTH - val;
+        const flipExprY = (e: { exp: string; val: number }) => ({
+          exp: `${flipY(e.val)} m`,
+          val: flipY(e.val)
+        });
+        const flipExprHeading = (e: { exp: string; val: number }) => ({
+          exp: `${-e.val} rad`,
+          val: -e.val
+        });
+
+        const mirrored = {
+          ...serialized,
+          name: path!.name,
+          params: {
+            ...serialized.params,
+            waypoints: serialized.params.waypoints.map((wpt) => ({
+              ...wpt,
+              y: flipExprY(wpt.y),
+              heading: flipExprHeading(wpt.heading)
+            })),
+            constraints: serialized.params.constraints.map((con) => {
+              const d = con.data;
+              if (
+                d.type === "KeepInCircle" ||
+                d.type === "KeepOutCircle"
+              ) {
+                return {
+                  ...con,
+                  data: {
+                    ...d,
+                    props: { ...d.props, y: flipExprY(d.props.y) }
+                  }
+                };
+              }
+              if (d.type === "KeepInRectangle") {
+                // rect spans [y, y+h]; mirrored bottom-left is at FIELD_WIDTH - (y+h)
+                const newY = flipY(d.props.y.val + d.props.h.val);
+                return {
+                  ...con,
+                  data: {
+                    ...d,
+                    props: {
+                      ...d.props,
+                      y: { exp: `${newY} m`, val: newY }
+                    }
+                  }
+                };
+              }
+              if (d.type === "PointAt") {
+                return {
+                  ...con,
+                  data: {
+                    ...d,
+                    props: { ...d.props, y: flipExprY(d.props.y) }
+                  }
+                };
+              }
+              return con;
+            })
+          }
+        };
+        path!.deserialize(mirrored);
       }
     };
   })

@@ -14,6 +14,10 @@
 #include "trajopt/constraint/lane_constraint.hpp"
 #include "trajopt/constraint/linear_acceleration_max_magnitude_constraint.hpp"
 #include "trajopt/constraint/linear_velocity_direction_constraint.hpp"
+#include "trajopt/constraint/angular_acceleration_max_magnitude_constraint.hpp"
+#include "trajopt/constraint/front_pivot_constraint.hpp"
+#include "trajopt/constraint/linear_velocity_diff_constraint.hpp"
+#include "trajopt/constraint/linear_velocity_heading_constraint.hpp"
 #include "trajopt/constraint/linear_velocity_max_magnitude_constraint.hpp"
 #include "trajopt/constraint/point_at_constraint.hpp"
 #include "trajopt/constraint/point_line_region_constraint.hpp"
@@ -194,10 +198,59 @@ void SwerveTrajectoryGenerator::wpt_keep_out_circle(size_t index, double x,
   }
 }
 
+void SwerveTrajectoryGenerator::wpt_linear_velocity_heading(size_t index,
+                                                            double tolerance) {
+  path_builder.wpt_constraint(
+      index, trajopt::LinearVelocityHeadingConstraint{tolerance});
+}
+
+void SwerveTrajectoryGenerator::wpt_angular_acceleration_max_magnitude(
+    size_t index, double magnitude) {
+  path_builder.wpt_constraint(
+      index, trajopt::AngularAccelerationMaxMagnitudeConstraint{magnitude});
+}
+
+void SwerveTrajectoryGenerator::sgmt_angular_acceleration_max_magnitude(
+    size_t from_index, size_t to_index, double magnitude) {
+  path_builder.sgmt_constraint(
+      from_index, to_index,
+      trajopt::AngularAccelerationMaxMagnitudeConstraint{magnitude});
+}
+
+void SwerveTrajectoryGenerator::wpt_linear_velocity_diff(size_t index) {
+  path_builder.wpt_constraint(index, trajopt::LinearVelocityDiffConstraint{});
+}
+
+void SwerveTrajectoryGenerator::sgmt_linear_velocity_diff(size_t from_index,
+                                                          size_t to_index) {
+  path_builder.sgmt_constraint(from_index, to_index,
+                               trajopt::LinearVelocityDiffConstraint{});
+}
+
+void SwerveTrajectoryGenerator::wpt_front_pivot(size_t index,
+                                                double pivot_distance) {
+  path_builder.wpt_constraint(index,
+                              trajopt::FrontPivotConstraint{pivot_distance});
+}
+
+void SwerveTrajectoryGenerator::sgmt_front_pivot(size_t from_index,
+                                                 size_t to_index,
+                                                 double pivot_distance) {
+  path_builder.sgmt_constraint(from_index, to_index,
+                               trajopt::FrontPivotConstraint{pivot_distance});
+}
+
 void SwerveTrajectoryGenerator::sgmt_linear_velocity_direction(
     size_t from_index, size_t to_index, double angle) {
   path_builder.sgmt_constraint(
       from_index, to_index, trajopt::LinearVelocityDirectionConstraint{angle});
+}
+
+void SwerveTrajectoryGenerator::sgmt_linear_velocity_heading(
+    size_t from_index, size_t to_index, double tolerance) {
+  path_builder.sgmt_constraint(
+      from_index, to_index,
+      trajopt::LinearVelocityHeadingConstraint{tolerance});
 }
 
 void SwerveTrajectoryGenerator::sgmt_linear_velocity_max_magnitude(
@@ -540,6 +593,19 @@ void DifferentialTrajectoryGenerator::wpt_keep_out_circle(size_t index,
                      radius});
     }
   }
+}
+
+void DifferentialTrajectoryGenerator::wpt_angular_acceleration_max_magnitude(
+    size_t index, double magnitude) {
+  path_builder.wpt_constraint(
+      index, trajopt::AngularAccelerationMaxMagnitudeConstraint{magnitude});
+}
+
+void DifferentialTrajectoryGenerator::sgmt_angular_acceleration_max_magnitude(
+    size_t from_index, size_t to_index, double magnitude) {
+  path_builder.sgmt_constraint(
+      from_index, to_index,
+      trajopt::AngularAccelerationMaxMagnitudeConstraint{magnitude});
 }
 
 void DifferentialTrajectoryGenerator::sgmt_linear_velocity_direction(

@@ -101,6 +101,12 @@ impl SwerveGenerationTransformer for ConstraintSetter {
             let from = fix_scope(constraint.from, &self.guess_points);
             let to_opt = constraint.to.map(|idx| fix_scope(idx, &self.guess_points));
             match constraint.data {
+                ConstraintData::MaxAngularAcceleration { max } => match to_opt {
+                    None => generator.wpt_angular_acceleration_max_magnitude(from, max),
+                    Some(to) => {
+                        generator.sgmt_angular_acceleration_max_magnitude(from, to, max)
+                    }
+                },
                 ConstraintData::PointAt {
                     x,
                     y,
@@ -150,9 +156,44 @@ impl SwerveGenerationTransformer for ConstraintSetter {
                         );
                     }
                 }
+                ConstraintData::KeepInBounds { tolerance } => {
+                    if let Some(idx_to) = to_opt {
+                        for i in from..idx_to {
+                            let j = i + 1;
+                            if let Some(wpt_from) = self.waypoint_idx.get(i)
+                                && let Some(wpt_to) = self.waypoint_idx.get(j)
+                            {
+                                generator.sgmt_keep_in_lane(
+                                    i, j, wpt_from.x, wpt_from.y, wpt_to.x, wpt_to.y, tolerance,
+                                );
+                            }
+                        }
+                    }
+                }
                 ConstraintData::KeepOutCircle { x, y, r } => match to_opt {
                     None => generator.wpt_keep_out_circle(from, x, y, r),
                     Some(to) => generator.sgmt_keep_out_circle(from, to, x, y, r),
+                },
+                ConstraintData::Strafe {
+                    tolerance,
+                    max_ang_vel,
+                } => match to_opt {
+                    None => {
+                        generator.wpt_linear_velocity_heading(from, tolerance);
+                        generator.wpt_angular_velocity_max_magnitude(from, max_ang_vel);
+                    }
+                    Some(to) => {
+                        generator.sgmt_linear_velocity_heading(from, to, tolerance);
+                        generator.sgmt_angular_velocity_max_magnitude(from, to, max_ang_vel);
+                    }
+                },
+                ConstraintData::StrafeDiff {} => match to_opt {
+                    None => generator.wpt_linear_velocity_diff(from),
+                    Some(to) => generator.sgmt_linear_velocity_diff(from, to),
+                },
+                ConstraintData::FrontPivot { d } => match to_opt {
+                    None => generator.wpt_front_pivot(from, d),
+                    Some(to) => generator.sgmt_front_pivot(from, to, d),
                 },
             };
         }
@@ -219,10 +260,34 @@ impl DifferentialGenerationTransformer for ConstraintSetter {
                         );
                     }
                 }
+                ConstraintData::KeepInBounds { tolerance } => {
+                    if let Some(idx_to) = to_opt {
+                        for i in from..idx_to {
+                            let j = i + 1;
+                            if let Some(wpt_from) = self.waypoint_idx.get(i)
+                                && let Some(wpt_to) = self.waypoint_idx.get(j)
+                            {
+                                generator.sgmt_keep_in_lane(
+                                    i, j, wpt_from.x, wpt_from.y, wpt_to.x, wpt_to.y, tolerance,
+                                );
+                            }
+                        }
+                    }
+                }
                 ConstraintData::KeepOutCircle { x, y, r } => match to_opt {
                     None => generator.wpt_keep_out_circle(from, x, y, r),
                     Some(to) => generator.sgmt_keep_out_circle(from, to, x, y, r),
                 },
+                ConstraintData::MaxAngularAcceleration { max } => match to_opt {
+                    None => generator.wpt_angular_acceleration_max_magnitude(from, max),
+                    Some(to) => {
+                        generator.sgmt_angular_acceleration_max_magnitude(from, to, max)
+                    }
+                },
+                // Differential drives cannot strafe or pivot; ignore these constraints
+                ConstraintData::Strafe { .. } => {}
+                ConstraintData::StrafeDiff {} => {}
+                ConstraintData::FrontPivot { .. } => {}
             };
         }
     }

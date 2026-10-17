@@ -3,6 +3,7 @@ import {
   DoNotDisturb,
   NearMe,
   StopCircleOutlined,
+  SwapHoriz,
   SyncOutlined,
   SystemUpdateAlt
 } from "@mui/icons-material";
@@ -50,6 +51,7 @@ export type ConstraintDataTypeMap = {
   MaxVelocity: { max: Expr };
   MaxAcceleration: { max: Expr };
   MaxAngularVelocity: { max: Expr };
+  MaxAngularAcceleration: { max: Expr };
   PointAt: {
     x: Expr;
     y: Expr;
@@ -70,11 +72,19 @@ export type ConstraintDataTypeMap = {
   KeepInLane: {
     tolerance: Expr;
   };
+  KeepInBounds: {
+    tolerance: Expr;
+  };
   KeepOutCircle: {
     x: Expr;
     y: Expr;
     r: Expr;
   };
+  Strafe: { tolerance: Expr; maxAngVel: Expr };
+  // Record<string,never> broke the keyof operator
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  StrafeDiff: {};
+  FrontPivot: { d: Expr };
 };
 export type DataMap = {
   [K in keyof ConstraintDataTypeMap]: IConstraintData<
@@ -147,6 +157,23 @@ export const ConstraintDefinitions: defs = {
     wptScope: true,
     sgmtScope: true
   } satisfies ConstraintDefinition<"MaxAngularVelocity">,
+  MaxAngularAcceleration: {
+    type: "MaxAngularAcceleration" as const,
+    name: "Max Angular Acceleration",
+    shortName: "Max Ang Acc",
+    description: "Maximum Angular Acceleration",
+    icon: <SyncOutlined />,
+    properties: {
+      max: {
+        name: "Max Angular Acceleration",
+        description: "Maximum angular acceleration of robot chassis",
+        dimension: Dimensions.AngAcc,
+        defaultVal: { exp: "0 rad / s^2", val: 0 }
+      }
+    },
+    wptScope: true,
+    sgmtScope: true
+  } satisfies ConstraintDefinition<"MaxAngularAcceleration">,
   PointAt: {
     type: "PointAt" as const,
     name: "Point At",
@@ -266,6 +293,24 @@ export const ConstraintDefinitions: defs = {
     wptScope: false,
     sgmtScope: true
   } satisfies ConstraintDefinition<"KeepInLane">,
+  KeepInBounds: {
+    type: "KeepInBounds" as const,
+    name: "Keep In Bounds",
+    shortName: "Keep In Bounds",
+    description:
+      "Keep the robot within a lane between each consecutive waypoint pair in the constraint range",
+    icon: <KeepInLane />,
+    properties: {
+      tolerance: {
+        name: "Tolerance",
+        description: "Maximum allowed distance from the line between each waypoint pair",
+        dimension: Dimensions.Length,
+        defaultVal: { exp: "0.5 m", val: 0.5 }
+      }
+    },
+    wptScope: false,
+    sgmtScope: true
+  } satisfies ConstraintDefinition<"KeepInBounds">,
   KeepOutCircle: {
     type: "KeepOutCircle" as const,
     name: "Keep Out Circle",
@@ -294,7 +339,63 @@ export const ConstraintDefinitions: defs = {
     },
     wptScope: true,
     sgmtScope: true
-  } satisfies ConstraintDefinition<"KeepOutCircle">
+  } satisfies ConstraintDefinition<"KeepOutCircle">,
+  Strafe: {
+    type: "Strafe" as const,
+    name: "Strafe",
+    shortName: "Strafe",
+    description:
+      "Prevent strafing by limiting the angle between the robot heading and its velocity direction (swerve only)",
+    icon: <SwapHoriz />,
+    properties: {
+      tolerance: {
+        name: "Max Angle",
+        description:
+          "Maximum allowed angle between the robot's heading and its linear velocity direction",
+        dimension: Dimensions.Angle,
+        defaultVal: { exp: "0 deg", val: 0 }
+      },
+      maxAngVel: {
+        name: "Max Ang Vel",
+        description:
+          "Maximum angular velocity, used to prevent the robot from twirling to satisfy the heading constraint",
+        dimension: Dimensions.AngVel,
+        defaultVal: { exp: "3.14 rad/s", val: Math.PI }
+      }
+    },
+    wptScope: true,
+    sgmtScope: true
+  } satisfies ConstraintDefinition<"Strafe">,
+  StrafeDiff: {
+    type: "StrafeDiff" as const,
+    name: "Strafe Diff",
+    shortName: "Strafe Diff",
+    description:
+      "Enforce differential-drive kinematics: zero lateral velocity (swerve only)",
+    icon: <SwapHoriz />,
+    properties: {},
+    wptScope: true,
+    sgmtScope: true
+  } satisfies ConstraintDefinition<"StrafeDiff">,
+  FrontPivot: {
+    type: "FrontPivot" as const,
+    name: "Front Pivot",
+    shortName: "Front Pivot",
+    description:
+      "Place the instantaneous center of rotation at a fixed distance in front of the robot, so the front stays stationary while the back swings around (swerve only)",
+    icon: <SwapHoriz />,
+    properties: {
+      d: {
+        name: "Pivot Distance",
+        description:
+          "Distance from robot center to the front pivot point along the heading direction",
+        dimension: Dimensions.Length,
+        defaultVal: { exp: "0.5 m", val: 0.5 }
+      }
+    },
+    wptScope: true,
+    sgmtScope: true
+  } satisfies ConstraintDefinition<"FrontPivot">
 };
 
 export type ConstraintKey = keyof DataMap;

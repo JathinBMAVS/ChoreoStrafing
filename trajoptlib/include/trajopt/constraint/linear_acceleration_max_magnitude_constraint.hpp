@@ -44,8 +44,13 @@ class TRAJOPT_DLLEXPORT LinearAccelerationMaxMagnitudeConstraint {
       problem.subject_to(linear_acceleration.x() == 0.0);
       problem.subject_to(linear_acceleration.y() == 0.0);
     } else {
+      // A small slack keeps the interior-point barrier away from the
+      // constraint boundary, where the barrier gradient diverges and
+      // causes the solver to grind through thousands of tiny steps.
+      // 5% slack in magnitude (~10% in area) is within FRC model uncertainty.
+      constexpr double kSlack = 1.05;
       problem.subject_to(linear_acceleration.squared_norm() <=
-                         m_max_magnitude * m_max_magnitude);
+                         kSlack * kSlack * m_max_magnitude * m_max_magnitude);
     }
   }
 
